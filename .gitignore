@@ -1,0 +1,91 @@
+# -----------------------------
+# OS
+# -----------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# -----------------------------
+# Java / Maven / Spring
+# -----------------------------
+target/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven wrapper jar is optional in many setups; ignore if generated locally
+.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot runtime artifacts
+*.log
+logs/
+hs_err_pid*
+replay_pid*
+
+# -----------------------------
+# Node / Frontend
+# -----------------------------
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# -----------------------------
+# Environment / Secrets
+# -----------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# -----------------------------
+# IDE / Editor
+# -----------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+
+.vscode/*
+!.vscode/extensions.json
+
+# Eclipse / STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+# -----------------------------
+# Temporary / Misc
+# -----------------------------
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+
+# Keep source-generated folders if any are intentionally committed
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
