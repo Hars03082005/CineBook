@@ -181,7 +181,7 @@ export default function TicketPage() {
         <button
           onClick={handleDownload}
           style={{
-            padding:'12px 24px', borderRadius:'12px', border:'none',
+            padding:'12px 24px', borderRadius:'12px',
             background: `linear-gradient(135deg, ${ts.color}44, ${ts.color}22)`,
             border: `1px solid ${ts.border}`,
             color: ts.color, fontWeight:'800', fontSize:'14px', cursor:'pointer',

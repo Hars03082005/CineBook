@@ -4,6 +4,7 @@ import com.project.moviebooking.model.*;
 import com.project.moviebooking.repository.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "app.seed.enabled", havingValue = "true", matchIfMissing = true)
 public class DataLoader {
 
     private final TheatreRepository theatreRepository;
