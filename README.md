@@ -47,6 +47,9 @@ From the project root:
 ```powershell
 .\mvnw.cmd spring-boot:run
 ```
+```bash
+./mvnw spring-boot:run
+```
 
 If Maven wrapper download fails in your network/DNS setup, use a local Maven install or the cached Maven wrapper distribution.
 
@@ -55,7 +58,7 @@ Backend URL: http://localhost:8080
 ### 3) Start Frontend
 ```powershell
 Set-Location .\frontend
-npm instal
+npm install
 npm run dev
 ```
 
