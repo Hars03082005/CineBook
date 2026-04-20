@@ -1,5 +1,6 @@
 package com.project.moviebooking.service;
 
+import com.project.moviebooking.contracts.ISearchable;
 import com.project.moviebooking.model.Movie;
 import com.project.moviebooking.repository.MovieRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,7 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class MovieService {
+public class MovieService implements ISearchable {
 
     private final MovieRepository movieRepository;
 
@@ -80,21 +81,32 @@ public class MovieService {
     /**
      * Search movies by genre
      */
-    public List<Movie> getMoviesByGenre(String genre) {
+    @Override
+    public List<Movie> filterByGenre(String genre) {
         return movieRepository.findByGenreIgnoreCase(genre);
     }
 
     /**
      * Search movies by language
      */
-    public List<Movie> getMoviesByLanguage(String language) {
+    @Override
+    public List<Movie> filterByLanguage(String language) {
         return movieRepository.findByLanguageIgnoreCase(language);
     }
 
     /**
      * Search movies by title (partial match)
      */
+    @Override
     public List<Movie> searchMovies(String keyword) {
         return movieRepository.findByTitleContainingIgnoreCase(keyword);
+    }
+
+    public List<Movie> getMoviesByGenre(String genre) {
+        return filterByGenre(genre);
+    }
+
+    public List<Movie> getMoviesByLanguage(String language) {
+        return filterByLanguage(language);
     }
 }

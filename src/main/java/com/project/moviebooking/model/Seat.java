@@ -34,4 +34,21 @@ public class Seat {
     private boolean booked = false;
 
     private String bookedByUserId;
+
+    /** GRASP Information Expert: Seat knows its own availability. */
+    public boolean isAvailable() {
+        return !booked;
+    }
+
+    /** GRASP Information Expert: Seat controls hold operation. */
+    public void hold(String userId) {
+        this.booked = true;
+        this.bookedByUserId = userId;
+    }
+
+    /** GRASP Information Expert: Seat controls release operation. */
+    public void release() {
+        this.booked = false;
+        this.bookedByUserId = null;
+    }
 }

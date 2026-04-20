@@ -1,6 +1,7 @@
 package com.project.moviebooking.service;
 
 import com.project.moviebooking.config.JwtUtil;
+import com.project.moviebooking.contracts.IAuthenticable;
 import com.project.moviebooking.dto.LoginRequest;
 import com.project.moviebooking.dto.LoginResponse;
 import com.project.moviebooking.dto.RegisterRequest;
@@ -28,7 +29,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthService implements IAuthenticable {
 
     private final UserRepository  userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -57,6 +58,7 @@ public class AuthService {
     /**
      * Login — verify credentials and return JWT token
      */
+    @Override
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException(
@@ -73,5 +75,17 @@ public class AuthService {
 
         return new LoginResponse(token, user.getId(), user.getName(),
                 user.getEmail(), user.getRole(), "Login successful");
+    }
+
+    @Override
+    public void logout(String token) {
+        // Stateless JWT logout marker (no-op by design).
+    }
+
+    @Override
+    public boolean validateCredentials(String email, String rawPassword) {
+        return userRepository.findByEmail(email)
+                .map(user -> passwordEncoder.matches(rawPassword, user.getPassword()))
+                .orElse(false);
     }
 }

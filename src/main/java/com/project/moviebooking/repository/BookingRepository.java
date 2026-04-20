@@ -1,6 +1,7 @@
 package com.project.moviebooking.repository;
 
 import com.project.moviebooking.model.Booking;
+import com.project.moviebooking.repository.contracts.IBookingRepository;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,7 +11,7 @@ import java.util.List;
  * BookingRepository - MongoDB CRUD for Booking
  */
 @Repository
-public interface BookingRepository extends MongoRepository<Booking, String> {
+public interface BookingRepository extends MongoRepository<Booking, String>, IBookingRepository {
 
     List<Booking> findByUserId(String userId);
 

@@ -5,7 +5,7 @@ import com.project.moviebooking.dto.ApiResponse;
 import com.project.moviebooking.dto.PaymentRequest;
 import com.project.moviebooking.model.Payment;
 import com.project.moviebooking.model.Ticket;
-import com.project.moviebooking.service.BookingService;
+import com.project.moviebooking.service.BookingFacade;
 import com.project.moviebooking.service.PaymentService;
 import com.project.moviebooking.service.UserProfileService;
 import jakarta.validation.Valid;
@@ -26,8 +26,8 @@ import java.util.List;
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class PaymentController {
 
-    private final PaymentService     paymentService;  // ← INTERFACE (DIP)
-    private final BookingService     bookingService;  // ← INTERFACE (DIP)
+    private final PaymentService     paymentService;  // kept for direct query endpoints
+    private final BookingFacade      bookingFacade;   // facade indirection
     private final JwtUtil            jwtUtil;
     private final UserProfileService userProfileService;
 
@@ -42,11 +42,11 @@ public class PaymentController {
             @RequestHeader("Authorization") String authHeader) {
 
         String userId = extractUserId(authHeader);
-        Payment payment = paymentService.processPayment(request, userId);
+        Payment payment = bookingFacade.processPayment(request, userId);
 
         if ("SUCCESS".equals(payment.getStatus())) {
             Ticket ticket = null;
-            try { ticket = bookingService.getTicketByBookingId(payment.getBookingId()); }
+            try { ticket = bookingFacade.downloadTicket(payment.getBookingId()); }
             catch (Exception ignored) {}
 
             return ResponseEntity.ok(ApiResponse.success(

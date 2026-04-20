@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,4 +42,9 @@ public class Show {
     private int availableSeats = 150;
 
     private boolean active = true;
+
+    /** GRASP Information Expert: Show knows if it is expired from its own schedule. */
+    public boolean isExpired() {
+        return !LocalDateTime.of(showDate, showTime).isAfter(LocalDateTime.now());
+    }
 }

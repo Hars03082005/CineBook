@@ -1,6 +1,7 @@
 package com.project.moviebooking.repository;
 
 import com.project.moviebooking.model.Seat;
+import com.project.moviebooking.repository.contracts.ISeatRepository;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,7 +13,7 @@ import java.util.Optional;
  * SOLID: I — only seat-related queries
  */
 @Repository
-public interface SeatRepository extends MongoRepository<Seat, String> {
+public interface SeatRepository extends MongoRepository<Seat, String>, ISeatRepository {
 
     /** All seats for a show — used to render the seat grid */
     List<Seat> findByShowId(String showId);

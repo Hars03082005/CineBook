@@ -1,6 +1,7 @@
 package com.project.moviebooking.repository;
 
 import com.project.moviebooking.model.Movie;
+import com.project.moviebooking.repository.contracts.IMovieRepository;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,7 +11,7 @@ import java.util.List;
  * MovieRepository - MongoDB CRUD for Movie
  */
 @Repository
-public interface MovieRepository extends MongoRepository<Movie, String> {
+public interface MovieRepository extends MongoRepository<Movie, String>, IMovieRepository {
 
     List<Movie> findByActiveTrue();
 
