@@ -55,7 +55,7 @@ Backend URL: http://localhost:8080
 ### 3) Start Frontend
 ```powershell
 Set-Location .\frontend
-npm install
+npm instal
 npm run dev
 ```
 
@@ -82,8 +82,8 @@ These credentials are seeded automatically on startup if the admin account does 
 - Booking blocked for already started/past shows
 - Payment hold timeout: 10 minutes, then seat release
 - Cancellation and refund policy:
-  - More than 2 hours before show: 100% refund
-  - Within 2 hours before show: 50% refund
+  - More than 2 hours before show: 50% refund
+  - Within 2 hours before show: no refund, but cancellation is still allowed
   - Past show: cancellation rejected
 
 ## API Overview

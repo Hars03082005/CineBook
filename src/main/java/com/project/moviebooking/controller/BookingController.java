@@ -6,7 +6,7 @@ import com.project.moviebooking.dto.BookingRequest;
 import com.project.moviebooking.dto.CancellationPreview;
 import com.project.moviebooking.model.Booking;
 import com.project.moviebooking.model.Ticket;
-import com.project.moviebooking.service.BookingService;
+import com.project.moviebooking.service.BookingFacade;
 import com.project.moviebooking.service.UserProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ import java.util.List;
 public class BookingController {
 
     // ── SOLID: D — depends on INTERFACE, not implementation ──
-    private final BookingService     bookingService;     // ← interface injection (DIP)
+    private final BookingFacade      bookingFacade;      // ← FACADE indirection
     private final UserProfileService userProfileService; // ← SRP: profile concern
     private final JwtUtil            jwtUtil;
 
@@ -56,7 +56,7 @@ public class BookingController {
             @RequestHeader("Authorization") String authHeader) {
 
         String userId = extractUserId(authHeader);
-        Booking booking = bookingService.createBooking(request, userId);  // ← delegation
+        Booking booking = bookingFacade.initiateBooking(request, userId);  // ← delegation
         return ResponseEntity.ok(
                 ApiResponse.success("Seats reserved! Proceed to payment.", booking));
     }
@@ -72,7 +72,7 @@ public class BookingController {
         String userId = extractUserId(authHeader);
         return ResponseEntity.ok(
                 ApiResponse.success("Your bookings",
-                        bookingService.getBookingsByUser(userId)));
+                bookingFacade.getBookingsByUser(userId)));
     }
 
     /**
@@ -84,7 +84,7 @@ public class BookingController {
             @PathVariable String userId) {
         return ResponseEntity.ok(
                 ApiResponse.success("Bookings for user",
-                        bookingService.getBookingsByUser(userId)));
+                bookingFacade.getBookingsByUser(userId)));
     }
 
     /**
@@ -94,7 +94,7 @@ public class BookingController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Booking>> getBooking(@PathVariable String id) {
         return ResponseEntity.ok(
-                ApiResponse.success("Booking found", bookingService.getBookingById(id)));
+                ApiResponse.success("Booking found", bookingFacade.getBookingById(id)));
     }
 
         /**
@@ -107,7 +107,7 @@ public class BookingController {
                         @RequestHeader("Authorization") String authHeader) {
 
                 String userId = extractUserId(authHeader);
-                CancellationPreview preview = bookingService.getCancellationPreview(id, userId);
+                CancellationPreview preview = bookingFacade.getRefundAmount(id, userId);
                 return ResponseEntity.ok(ApiResponse.success("Cancellation policy evaluated.", preview));
         }
 
@@ -121,8 +121,8 @@ public class BookingController {
             @RequestHeader("Authorization") String authHeader) {
 
         String userId = extractUserId(authHeader);
-        CancellationPreview preview = bookingService.getCancellationPreview(id, userId);
-        Booking cancelled = bookingService.cancelBooking(id, userId);
+        CancellationPreview preview = bookingFacade.getRefundAmount(id, userId);
+        Booking cancelled = bookingFacade.cancelBooking(id, userId);
         return ResponseEntity.ok(
                 ApiResponse.success("Booking cancelled. Refund processed: Rs " + preview.getRefundAmount(), cancelled));
     }
@@ -144,7 +144,7 @@ public class BookingController {
     public ResponseEntity<ApiResponse<Ticket>> getTicketForBooking(
             @PathVariable String bookingId) {
         return ResponseEntity.ok(ApiResponse.success("Ticket",
-                bookingService.getTicketByBookingId(bookingId)));
+                bookingFacade.downloadTicket(bookingId)));
     }
 
     /**
@@ -154,7 +154,7 @@ public class BookingController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<Booking>>> getAllBookings() {
         return ResponseEntity.ok(
-                ApiResponse.success("All bookings", bookingService.getAllBookings()));
+                ApiResponse.success("All bookings", bookingFacade.getAllBookings()));
     }
 
     // ── Helper: extract userId from JWT ──

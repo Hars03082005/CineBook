@@ -50,7 +50,7 @@ public class Payment {
     private String transactionId;
 
     // Refund fields
-    private double refundAmount = 0;       // 50% of baseAmount if cancelled > 2h before show
+    private double refundAmount = 0;       // 50% of baseAmount if cancelled > 2h before show, otherwise 0
     private String refundStatus = "NONE";  // NONE, ELIGIBLE, PROCESSED, NOT_ELIGIBLE
     private String refundReason = "";
 

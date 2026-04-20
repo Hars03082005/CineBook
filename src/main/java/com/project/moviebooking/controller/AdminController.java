@@ -3,6 +3,7 @@ package com.project.moviebooking.controller;
 import com.project.moviebooking.dto.ApiResponse;
 import com.project.moviebooking.model.*;
 import com.project.moviebooking.repository.*;
+import com.project.moviebooking.service.IAdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,6 +41,7 @@ public class AdminController {
     private final BookingRepository bookingRepository;
     private final UserRepository    userRepository;
     private final PaymentRepository paymentRepository;
+    private final IAdminService adminService;
 
     // ─────────────────────────────────────────────────────────────
     // ▶ MOVIE CRUD
@@ -316,64 +318,7 @@ public class AdminController {
 
         @GetMapping("/reports/summary")
         public ResponseEntity<ApiResponse<Report>> getSummaryReport() {
-        List<Booking> bookings = bookingRepository.findAll();
-        List<Booking> confirmed = bookings.stream().filter(b -> "CONFIRMED".equals(b.getStatus())).toList();
-        List<Booking> cancelled = bookings.stream().filter(b -> "CANCELLED".equals(b.getStatus())).toList();
-
-        Map<String, Double> revenuePerMovie = confirmed.stream()
-            .collect(Collectors.groupingBy(
-                b -> movieRepository.findById(b.getMovieId()).map(Movie::getTitle).orElse("Unknown"),
-                Collectors.summingDouble(Booking::getTotalAmount)
-            ));
-
-        Map<String, Double> occupancyPerMovie = confirmed.stream()
-            .collect(Collectors.groupingBy(
-                b -> movieRepository.findById(b.getMovieId()).map(Movie::getTitle).orElse("Unknown"),
-                Collectors.collectingAndThen(Collectors.toList(), list -> {
-                    int totalBookedSeats = list.stream().mapToInt(Booking::getNumberOfSeats).sum();
-                    int totalCapacity = list.stream().mapToInt(b ->
-                        theatreRepository.findById(b.getTheatreId()).map(Theatre::getTotalSeats).orElse(150)
-                    ).sum();
-                    if (totalCapacity == 0) return 0.0;
-                    return (totalBookedSeats * 100.0) / totalCapacity;
-                })
-            ));
-
-        Map<String, Double> dailyRevenue = confirmed.stream()
-            .collect(Collectors.groupingBy(
-                b -> String.valueOf(b.getBookingTime().toLocalDate()),
-                Collectors.summingDouble(Booking::getTotalAmount)
-            ));
-
-        WeekFields wf = WeekFields.ISO;
-        Map<String, Double> weeklyRevenue = confirmed.stream()
-            .collect(Collectors.groupingBy(
-                b -> {
-                    LocalDate d = b.getBookingTime().toLocalDate();
-                    return d.getYear() + "-W" + d.get(wf.weekOfWeekBasedYear());
-                },
-                Collectors.summingDouble(Booking::getTotalAmount)
-            ));
-
-        Map<String, Double> monthlyRevenue = confirmed.stream()
-            .collect(Collectors.groupingBy(
-                b -> b.getBookingTime().getYear() + "-" + String.format("%02d", b.getBookingTime().getMonthValue()),
-                Collectors.summingDouble(Booking::getTotalAmount)
-            ));
-
-        Map<String, Object> metrics = new LinkedHashMap<>();
-        metrics.put("totalBookings", bookings.size());
-        metrics.put("confirmedBookings", confirmed.size());
-        metrics.put("cancelledBookings", cancelled.size());
-        metrics.put("cancellationRate", bookings.isEmpty() ? 0.0 : (cancelled.size() * 100.0 / bookings.size()));
-        metrics.put("revenuePerMovie", revenuePerMovie);
-        metrics.put("seatOccupancyPercentPerMovie", occupancyPerMovie);
-        metrics.put("dailyRevenue", dailyRevenue);
-        metrics.put("weeklyRevenue", weeklyRevenue);
-        metrics.put("monthlyRevenue", monthlyRevenue);
-        metrics.put("generatedAt", LocalDateTime.now());
-
-        Report report = new Report("Booking and Revenue Summary", LocalDateTime.now(), metrics);
+        Report report = adminService.getSummaryReport();
         return ResponseEntity.ok(ApiResponse.success("Report generated", report));
         }
 

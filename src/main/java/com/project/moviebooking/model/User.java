@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Collection;
 import java.time.LocalDateTime;
 
 /**
@@ -62,4 +63,12 @@ public class User {
 
     /** Convenience: LSP-safe admin check without casting */
     public boolean isAdminRole() { return "ADMIN".equals(this.role); }
+
+    /** GRASP Information Expert: user-centric active booking check. */
+    public boolean hasActiveBooking(Collection<Booking> bookings) {
+        if (bookings == null) {
+            return false;
+        }
+        return bookings.stream().anyMatch(b -> "CONFIRMED".equals(b.getStatus()) || "PENDING".equals(b.getStatus()));
+    }
 }

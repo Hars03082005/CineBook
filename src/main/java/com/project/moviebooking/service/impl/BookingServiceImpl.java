@@ -4,8 +4,14 @@ import com.project.moviebooking.dto.BookingRequest;
 import com.project.moviebooking.dto.CancellationPreview;
 import com.project.moviebooking.model.*;
 import com.project.moviebooking.patterns.*;
+import com.project.moviebooking.patterns.builder.BookingBuilder;
+import com.project.moviebooking.patterns.state.BookingContext;
 import com.project.moviebooking.repository.*;
 import com.project.moviebooking.service.BookingService;
+import com.project.moviebooking.service.NotificationService;
+import com.project.moviebooking.service.PricingService;
+import com.project.moviebooking.service.RefundService;
+import com.project.moviebooking.service.SeatService;
 import com.project.moviebooking.service.UserProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,9 +43,14 @@ public class BookingServiceImpl implements BookingService {
     private final TheatreRepository  theatreRepository;
     private final TicketRepository   ticketRepository;
     private final TicketFactory      ticketFactory;        // FACTORY Pattern
-    private final BookingEventPublisher eventPublisher;    // OBSERVER Pattern
+    private final NotificationService notificationService;  // OBSERVER facade
     private final UserProfileService userProfileService;
     private final PaymentRepository  paymentRepository;
+    private final PricingService pricingService;
+    private final RefundService refundService;
+    private final SeatService seatService;
+
+    private final BookingContext bookingContext = new BookingContext();
 
     // ─────────────────────────────────────────────────────────────
     // CREATE BOOKING — Atomic seat locking (all-or-nothing)
@@ -74,6 +85,10 @@ public class BookingServiceImpl implements BookingService {
             throw new RuntimeException("Duplicate booking prevented: some selected seats are already reserved by you for this show.");
         }
 
+        if (!seatService.checkAvailability(show.getId(), requested)) {
+            throw new RuntimeException("Some selected seats are no longer available.");
+        }
+
         // ── PHASE 1: Validate ALL seats ──
         List<Seat> seatsToBook = new ArrayList<>();
         double totalAmount = 0;
@@ -104,22 +119,17 @@ public class BookingServiceImpl implements BookingService {
         showRepository.save(show);
 
         // ── PHASE 4: Create PENDING booking ──
-        Booking booking = new Booking();
-        booking.setUserId(userId);
-        booking.setShowId(show.getId());
-        booking.setMovieId(show.getMovieId());
-        booking.setTheatreId(show.getTheatreId());
-        booking.setSeatNumbers(requested);
-        booking.setNumberOfSeats(requested.size());
-        double convenienceFee = requested.size() * 20.0;
-        booking.setConvenienceFee(convenienceFee);
-        booking.setTotalAmount(totalAmount + convenienceFee);
-        booking.setStatus("PENDING");
-        booking.setBookingState("SeatsReserved");
-        booking.setPaymentState("PaymentInitiated");
-        booking.setCancellationState("TicketBooked");
-        booking.setBookingTime(LocalDateTime.now());
-        booking.setHoldExpiresAt(LocalDateTime.now().plusMinutes(10));
+        double convenienceFee = pricingService.calculateConvenienceFee(requested.size());
+        Booking booking = new BookingBuilder()
+            .setUser(userId)
+            .setShow(show.getId())
+            .setMovie(show.getMovieId())
+            .setTheatre(show.getTheatreId())
+            .setSeats(requested)
+            .setConvenienceFee(convenienceFee)
+            .setTotalAmount(pricingService.calculateTotal(totalAmount, requested.size()))
+            .setPaymentTimeoutMinutes(10)
+            .build();
 
         Booking saved = bookingRepository.save(booking);
         System.out.println("✅ [BOOKING] Pending booking created: " + saved.getId());
@@ -134,7 +144,7 @@ public class BookingServiceImpl implements BookingService {
 
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found: " + bookingId));
-        booking.setStatus("CONFIRMED");
+        booking.setStatus(bookingContext.transition(booking.getStatus(), "CONFIRMED"));
         booking.setBookingState("PaymentPending");
         booking.setPaymentState("PaymentSuccess");
         booking.setCancellationState("TicketBooked");
@@ -177,7 +187,7 @@ public class BookingServiceImpl implements BookingService {
         Ticket savedTicket = ticketRepository.save(ticket);
 
         // ── OBSERVER PATTERN: fire email + SMS events ──
-        eventPublisher.publishBookingConfirmed(
+        notificationService.sendConfirmation(
                 booking.getId(), booking.getUserId(), userEmail,
                 movie.getTitle(), savedTicket.getTicketCode(),
                 booking.getTotalAmount(),
@@ -231,7 +241,7 @@ public class BookingServiceImpl implements BookingService {
             paymentRepository.save(payment);
         });
 
-        booking.setStatus("CANCELLED");
+        booking.setStatus(bookingContext.transition(booking.getStatus(), "CANCELLED"));
         booking.setCancellationState("RefundCompleted");
         booking.setPaymentState("PaymentSuccess");
         return bookingRepository.save(booking);
@@ -249,21 +259,7 @@ public class BookingServiceImpl implements BookingService {
         Show show = showRepository.findById(booking.getShowId())
                 .orElseThrow(() -> new RuntimeException("Show not found for this booking."));
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime showStart = LocalDateTime.of(show.getShowDate(), show.getShowTime());
-
-        if (!showStart.isAfter(now)) {
-            return new CancellationPreview(false, 0, 0, "Cannot cancel past show");
-        }
-
-        long minutesBeforeShow = Duration.between(now, showStart).toMinutes();
-        double refundPercent = minutesBeforeShow > 120 ? 100.0 : 50.0;
-        double refundAmount = (booking.getTotalAmount() * refundPercent) / 100.0;
-        String reason = minutesBeforeShow > 120
-                ? "Cancellation requested more than 2 hours before show. Full refund applicable."
-                : "Cancellation requested within 2 hours of show. 50% refund applicable.";
-
-        return new CancellationPreview(true, refundPercent, refundAmount, reason);
+        return refundService.evaluate(booking, show);
     }
 
     private void releaseSeatsForBooking(Booking booking) {

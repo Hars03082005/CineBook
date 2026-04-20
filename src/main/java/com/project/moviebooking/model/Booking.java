@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -60,4 +61,14 @@ public class Booking {
     private String paymentId;
 
     private LocalDateTime bookingTime = LocalDateTime.now();
+
+    /** GRASP Information Expert: Booking knows total charged price. */
+    public double getTotalPrice() {
+        return totalAmount;
+    }
+
+    /** GRASP Information Expert: Booking can evaluate full-refund eligibility from show start. */
+    public boolean isEligibleForFullRefund(LocalDateTime showStart) {
+        return Duration.between(LocalDateTime.now(), showStart).toMinutes() > 120;
+    }
 }
